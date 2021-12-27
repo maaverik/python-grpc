@@ -1,9 +1,13 @@
 import random
 from concurrent import futures
+from signal import SIGTERM, signal
 
 import grpc
 
+# framework for client and server
 import recommendations_pb2_grpc
+
+# type definitions
 from recommendations_pb2 import BookCategory, BookRecommendation, RecommendationResponse
 
 books_by_category = {
@@ -25,9 +29,12 @@ books_by_category = {
 }
 
 
+# mandatory gRPC integration
 class RecommendationService(recommendations_pb2_grpc.RecommendationsServicer):
     def Recommend(self, request, context):
+        # no actual logic
         if request.category not in books_by_category:
+            # context allows working with the HTTP response
             context.abort(grpc.StatusCode.NOT_FOUND, "Category not found")
 
         books_for_category = books_by_category[request.category]
@@ -45,6 +52,15 @@ def serve(port):
     )
     server.add_insecure_port(f"[::]:{port}")
     server.start()
+
+    def handle_sigterm(*_):
+        # finish processing current requests but refuse new ones in production
+        print("Received shutdown signal")
+        all_rpcs_done_event = server.stop(30)
+        all_rpcs_done_event.wait(30)
+        print("Shut down gracefully")
+
+    signal(SIGTERM, handle_sigterm)
     server.wait_for_termination()
 
 
