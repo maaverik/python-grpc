@@ -1,5 +1,5 @@
 # docker build -t recommendations -f Dockerfile ..  // build context set to parent folder
-# docker run -it -p 127.0.0.1:50051:50051/tcp --name rec_run recommendations
+# docker run -it -p 127.0.0.1:50051:50051/tcp --network microservices --name rec_run recommendations
 
 FROM python:3.10-slim
 
